@@ -1,8 +1,8 @@
-resource "aws_vpc" "terraform_ec2_vpc" {
-  cidr_block = "10.0.0.0/16"
-}
+# resource "aws_vpc" "terraform_ec2_vpc" {
+#   cidr_block = "10.0.0.0/16"
+# }
 resource "aws_security_group" "instance" {
-  vpc_id = "${aws_vpc.terraform_ec2_vpc.id}"
+#   vpc_id = "${aws_vpc.terraform_ec2_vpc.id}"
   name        = "terraform_instance_security_group"
   description = "SSH_ONLY"
   
