@@ -1,5 +1,5 @@
 resource "aws_instance" "terra_ec2_isntance01" {
-    ami = "ami-0912f71e06545ad88"
+    ami = "ami-0912f71e06545ad88" 
     instance_type = "t2.micro"
 
     tags = {
@@ -14,6 +14,8 @@ resource "aws_instance" "terra_ec2_isntance01" {
                   systemctl enable httpd.service
                   echo "Hello, I am $(hostname -f)" > /var/www/html/index.html
                   EOF
+
+    key_name = ""
 
 }
 
