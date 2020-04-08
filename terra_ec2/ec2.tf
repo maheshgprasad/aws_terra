@@ -6,6 +6,7 @@ resource "aws_instance" "terra_ec2_instance01" {
         Name = "Terraform Created Instance"
         Type = "automated deployment using terraform"
     }
+    ebs_block_device ="${aws_ebs_volume.ebs_terraform_instance_volume_1}"
     user_data = <<-EOF
                   #!/bin/bash
                   yum update -y
