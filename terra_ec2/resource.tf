@@ -1,8 +1,14 @@
- resource "aws_vpc" "terraform_ec2_vpc" {
-   cidr_block = "10.0.0.0/16"
+ resource "aws_vpc" "terraform_managed_vpc" {
+  cidr_block = ["10.0.0.0/16"]
+  instance_tenancy = "shared"
+  
+  tags = {
+    Name = "terraform_managed_vpc"
+  }
+
  }
 resource "aws_security_group" "instance" {
-   vpc_id = "${aws_vpc.terraform_ec2_vpc.id}"
+  vpc_id = "${aws_vpc.terraform_managed_vpc.vpc_id}"
   name        = "terraform_instance_security_group"
   description = "SSH_ONLY"
   
@@ -14,7 +20,7 @@ resource "aws_security_group" "instance" {
     cidr_blocks = ["0.0.0.0/0"]
   }
   ingress {
-    description = "SSH"
+    description = "HTTP"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
@@ -40,6 +46,7 @@ resource "aws_ebs_volume" "ebs_terraform_instance_volume_1" {
   size              = 20
 
   tags = {
-    Name = "Terra_Volume_Base"
+    Name = "root_ebs_volume"
+    creator = "terraform"
   }
 }

@@ -16,7 +16,7 @@ resource "aws_instance" "terra_ec2_instance01" {
                   echo "Hello, I am $(hostname -f)" > /var/www/html/index.html
                   EOF
 
-    key_name = ""
+    key_name = "${aws_key_pair.deployer}"
 
 }
 
