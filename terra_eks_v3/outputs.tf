@@ -55,4 +55,7 @@ output "kubeconfig" {
     description = "Kubernetes Configuration to connect to the cluster from the management server"
 }
 
-
+output "deployer_ip" {
+  value = aws_instance.deployer.public_ip
+  description = "EKS Deployer Machine Public IP Address"
+}
