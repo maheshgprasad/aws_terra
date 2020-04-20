@@ -1,59 +1,61 @@
-data "aws_ami" "eks-worker" {
-  filter {
-      name  = "name"
-      values = ["amazon-eks-node-${aws_eks_cluster.eks-terra-cluster.version}-v*"]
-  }
+# IAM Worker Node Configuration
 
-  most_recent = true
-  owners      = ["amazon"]  
+
+resource "aws_iam_role" "iam-eks-node" {
+    name = var.iam_eks_node_name
+
+  assume_role_policy = <<POLICY
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "Service": ["eks.amazonaws.com", "ec2.amazonaws.com", "acm.amazonaws.com"]
+            },
+            "Action": "sts:AssumeRole"
+        }
+    ]
+}
+POLICY
 }
 
-data "aws_region" "current" {
-      
+# IAM Policy attachment to the worker nodes
+resource "aws_iam_role_policy_attachment" "iam-policy-eks-node" {
+ count = length(var.iam_eks_node_policy_arn)
+
+ policy_arn = var.iam_eks_node_policy_arn[count.index]
+ role       = aws_iam_role.iam-eks-node.name 
 }
 
-locals {
-    eks-worker-userdata = <<USERDATA
-    #!/bin/bash
-    set -o xtrace
-    /etc/eks/bootstrap.sh --apiserver-endpoint '${aws_eks_cluster.eks-terra-cluster.endpoint}' --b64-cluster-ca '${aws_eks_cluster.eks-terra-cluster.certificate_authority[0].data}' '${var.cluster-name}'
-    USERDATA
-}
+resource "aws_eks_node_group" "eks-worker-node" {
+    cluster_name    = aws_eks_cluster.eks.name
+    node_group_name = var.eks_node_group_name
+    node_role_arn   = aws_iam_role.iam-eks-node.arn
+    subnet_ids      = aws_subnet.subnet.*.id
 
 
-resource "aws_launch_configuration" "terra-eks-cluster-launch-configuration" {
-  associate_public_ip_address = true
-  image_id                    = data.aws_ami.eks-worker.id
-  instance_type               = "t3.medium"
-  name_prefix                 = "terra-eks"
-  security_groups             = [aws_security_group.eks-terra-node-security-group.id]
-  user_data                   = base64encode(local.eks-worker-userdata)
-  
-  lifecycle {
-      create_before_destroy = true
-  }
+    disk_size       = var.eks_ec2_disk_size #Interms of GiB
 
-  
-}
+    instance_types  = var.eks_worker_instance_type
 
-resource "aws_autoscaling_group" "terra-eks-asg" {
-    desired_capacity = 1
-    launch_configuration = aws_launch_configuration.terra-eks-cluster-launch-configuration.id
-    max_size = 1
-    min_size = 1
-    name = "eks-terra-nodes"
-    vpc_zone_identifier = aws_subnet.eks-terra-subnet[*].id
-
-            
-    tag {
-        key = "Name"
-        value = "terraform-eks-node"
-        propagate_at_launch = true
+    remote_access {
+        ec2_ssh_key    = var.eks_ec2_ssh_key 
+    }
+    
+    scaling_config {
+        desired_size    = var.eks_worker_desired_capacity
+        max_size        = var.eks_worker_max_size
+        min_size        = var.eks_worker_min_size
     }
 
-    tag {
-        key = "kubernetes.io/cluster/${var.cluster-name}"
-        value = "owned"
-        propagate_at_launch = true
+    tags = {
+        "Name" = var.eks_auto_scaling_group_name
     }
+
+    depends_on = [
+        aws_iam_role_policy_attachment.iam-policy-eks-node
+    ]
+  
 }
+

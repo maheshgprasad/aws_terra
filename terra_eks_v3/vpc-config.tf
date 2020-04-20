@@ -1,77 +1,57 @@
-# Contents of this file In-Order
-# AWS VPC Config
-# AWS VPC Subnet Config
-# VPC Internet Gateway Configuration
-# VPC Route Table
-# VPC Route Table Association
+data "aws_availability_zones" "available" { }
 
-resource "aws_vpc" "eks-terra-vpc" {
-  cidr_block = "10.0.0.0/16"                      # Is the IP CIDR block allocation to the vpc
+
+resource "aws_vpc" "vpc" {
+  cidr_block = "${var.cidr["A"]}.${var.cidr["B"]}.${var.cidr["C"]}.${var.cidr["D"]}/${var.cidr["NET"]}" 
 
   tags = {
-      "Name"                                      = "eks-terra-vpc-node"
-      "Kubernetes.io/cluster/${var.cluster-name}" = "shared"
+      "Name"                                      = var.vpc_name
+      "Kubernetes.io/cluster/${var.cluster_name}" = "shared"
   }
 }
 
 # NOTE: "Kubernetes.io/cluster/${var.cluster-name}" tags are required for EKS and K8s to discover and manage networking resources.
 
-data "aws_availability_zones" "available" { }
 
 
-resource "aws_subnet" "eks-terra-subnet" {
-    count = 2
+
+resource "aws_subnet" "subnet" {
+    count = var.subnet_count
     
     availability_zone = data.aws_availability_zones.available.names[count.index]
-    vpc_id            = aws_vpc.eks-terra-vpc.id
-    cidr_block        = "10.0.${count.index}.0/24"
+    vpc_id            = aws_vpc.vpc.id
+    cidr_block        = "${var.cidr["A"]}.${var.cidr["B"]}.${count.index}.${var.cidr["D"]}/${var.subnet_netbit}"
     
     
 
     tags = {
-      "Name"                                      = "eks-terra-vpc-node"
-      "Kubernetes.io/cluster/${var.cluster-name}" = "shared"
+      "Name"                                      = "${var.subnet_name}=${count.index}"
+      "Kubernetes.io/cluster/${var.cluster_name}" = "shared"
   }
 }
 
-# Associated to the Deployment Machine
-resource "aws_subnet" "eks-deployer-subnet" {
-  count = 2
-  availability_zone = data.aws_availability_zones.available.names[count.index]
-  vpc_id            = aws_vpc.eks-terra-vpc.id
-  cidr_block        = var.public-subnet       #change this in variables
-  map_public_ip_on_launch = true
-}
 
-
-
-resource "aws_internet_gateway" "eks-terra-vpc-internet-gateway" {
-  vpc_id = aws_vpc.eks-terra-vpc.id
+resource "aws_internet_gateway" "igw" {
+  vpc_id = aws_vpc.vpc.id
 
   tags = {
-      Name = "eks-terra-vpc"
+      Name = var.igw_name
   }
 }
 
-resource "aws_route_table" "eks-terra-vpc-route-table" {
-  vpc_id = aws_vpc.eks-terra-vpc.id
+resource "aws_route_table" "rt-table" {
+  vpc_id = aws_vpc.vpc.id
 
   route {
       cidr_block = "0.0.0.0/0"
-      gateway_id = aws_internet_gateway.eks-terra-vpc-internet-gateway.id
+      gateway_id = aws_internet_gateway.igw.id
   }
 }
 
-resource "aws_route_table_association" "eks-terra-vpc-route-table-assn" {
-  count = 2
+resource "aws_route_table_association" "rt-table-assn" {
+  count = var.subnet_count
 
-  subnet_id      = aws_subnet.eks-terra-subnet[count.index].id
-  route_table_id = aws_route_table.eks-terra-vpc-route-table.id
+  subnet_id      = aws_subnet.subnet[count.index].id
+  route_table_id = aws_route_table.rt-table.id
 }
 
-# Associated to the Deployment Machine
-resource "aws_route_table_association" "eks-deployer-subnet-rt-assn" {
-  count = 2
-  subnet_id      = aws_subnet.eks-deployer-subnet[count.index].id
-  route_table_id = aws_route_table.eks-terra-vpc-route-table.id 
-}

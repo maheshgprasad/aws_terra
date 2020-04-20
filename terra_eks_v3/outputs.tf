@@ -8,7 +8,7 @@ metadata:
     namespace: kube-system
 data:
   mapRoles: |
-    - rolearn: ${aws_iam_role.eks-terra-node-iam-role.arn}
+    - rolearn: ${aws_iam_role.iam-eks-node.arn}
       username: system:node:{{EC2PrivateDNSName}}
       groups:
         - system:bootstrappers
@@ -20,8 +20,8 @@ CONFIGMAPAWSAUTH
 apiVersion: v1
 clusters:
 - cluster:
-    server: ${aws_eks_cluster.eks-terra-cluster.endpoint}
-    certificate-authority-data: ${aws_eks_cluster.eks-terra-cluster.certificate_authority.0.data}
+    server: ${aws_eks_cluster.eks.endpoint}
+    certificate-authority-data: ${aws_eks_cluster.eks.certificate_authority.0.data}
   name: Kubernetes
 contexts:
 - context:
@@ -40,7 +40,7 @@ users:
       args:
         - "token"
         - "-i"
-        - "${var.cluster-name}"
+        - "${var.cluster_name}"
 KUBECONFIG
 
 }
@@ -54,16 +54,5 @@ output "kubeconfig" {
     value = local.kubeconfig
     description = "Kubernetes Configuration to connect to the cluster from the management server"
 }
-
-output "eks_cluster_endpoint" {
-  value = aws_eks_cluster.eks-terra-cluster.endpoint
-  description = "Cluster End Point"
-}
-
-output "eks_deployer_public_ip" {
-  value = aws_eip.deployer-eip.public_ip
-  description = "EKS Deployment Machine IP address"
-}
-
 
 
