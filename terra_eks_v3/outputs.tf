@@ -22,10 +22,10 @@ clusters:
 - cluster:
     server: ${aws_eks_cluster.eks.endpoint}
     certificate-authority-data: ${aws_eks_cluster.eks.certificate_authority.0.data}
-  name: Kubernetes
+  name: ${var.cluster_name}
 contexts:
 - context:
-    cluster: kubernetes
+    cluster: ${var.cluster_name}
     user: aws
   name: aws
 current-context: aws
@@ -36,10 +36,11 @@ users:
   user:
     exec:
       apiVersion: client.authentication.k8s.io/v1alpha1
-      command: aws-iam-authenticator
+      command: aws
       args:
-        - "token"
-        - "-i"
+        - "eks"
+        - "get-token"
+        - "--cluster-name"
         - "${var.cluster_name}"
 KUBECONFIG
 
