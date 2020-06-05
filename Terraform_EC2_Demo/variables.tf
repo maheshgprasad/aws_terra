@@ -1,3 +1,8 @@
+variable "region" {
+    type = string
+    default = "ap-south-1"  
+}
+
 variable "ec2_ami" {
   type = string
   description = "Amazon Machine Image Reference"
