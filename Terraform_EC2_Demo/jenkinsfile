@@ -1,0 +1,48 @@
+pipeline {
+    agent {
+        node {
+            label 'master'
+        }
+    }
+
+    stages {
+
+        stage('initiate pipeline') {
+            steps {
+                sh 'echo "Started...!" '
+            }
+        }
+        stage('nuke the workspace') {
+            steps {
+                sh 'sudo rm -rf *'
+            }
+        }
+        stage('git clone repository') {
+            steps {
+                sh 'sudo git clone https://github.com/maheshgprasad/aws_terra'
+            }
+        }
+        stage('traverse') {
+            steps {
+                sh 'cd ./aws_terra/Terraform_EC2_Demo'
+            }
+        }
+        stage('terraform init') {
+            steps {
+                sh 'sudo /usr/local/bin/terraform init  ./aws_terra/Terraform_EC2_Demo '
+            }
+        }
+        stage('terraform plan') {
+            steps {
+                sh 'sudo /usr/local/bin/terraform plan ./aws_terra/Terraform_EC2_Demo'
+            }
+        }
+        stage('end of pipe') {
+            steps {
+                sh 'echo "Ended....!!"'
+            }
+        }
+
+        
+    }
+}
